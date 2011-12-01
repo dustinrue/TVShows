@@ -581,6 +581,12 @@
         [controller downloadTorrentShowList];
     }
     
+    // Avoid a memory leak by breaking circular references between these classes 
+    [controller setSBArrayController:nil];
+    [controller setPTArrayController:nil];
+    [controller setSubscriptionsDelegate:nil];
+    [controller setPresetsDelegate:nil];
+    
     [SBArrayController release];
     [PTArrayController release];
     [controller release];
@@ -705,10 +711,13 @@
                 return;
             }
             
-            // If it has been 15 hours since the episode was aired attempt the download of any version
+            // If it has been 18 hours since the episode was aired attempt the download of any version
             // Also check that we have checked for episodes at least once in the last day
-            if ([[NSDate date] timeIntervalSinceDate:pubDate] > 15*60*60 &&
-                [[NSDate date] timeIntervalSinceDate:lastChecked] < 15*60*60) {
+            float anyVersionInterval = [TSUserDefaults getFloatFromKey:@"AnyVersionInterval" withDefault:18];
+            
+            if ([[NSDate date] timeIntervalSinceDate:pubDate] > anyVersionInterval*60*60 &&
+                ([[NSDate date] timeIntervalSinceDate:lastChecked] < 5*60*60 ||
+                 [[NSDate date] timeIntervalSinceDate:lastChecked] < (anyVersionInterval-5)*60*60)) {
                 chooseAnyVersion = YES;
             } else {
                 chooseAnyVersion = NO;
